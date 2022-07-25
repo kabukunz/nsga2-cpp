@@ -4,6 +4,22 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 project(nsga2)
 
+# OPEN MP
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    message("-- Setting OpenMP flags on MacOs. Assuming `brew install libomp`")
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" CACHE INTERNAL "OpenMP flags for Xcode toolchain.")
+        set(OpenMP_C_LIB_NAMES "omp" CACHE INTERNAL "OpenMP lib name for Xcode toolchain.")
+        set(OpenMP_omp_LIBRARY "/usr/local/opt/libomp/lib/libomp.dylib" CACHE INTERNAL "OpenMP lib name for Xcode toolchain.")
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" CACHE INTERNAL "OpenMP flags for Xcode toolchain.")
+        set(OpenMP_CXX_LIB_NAMES "omp" CACHE INTERNAL "OpenMP lib name for Xcode toolchain.")
+        set(OpenMP_omp_LIBRARY "/usr/local/opt/libomp/lib/libomp.dylib" CACHE INTERNAL "OpenMP lib name for Xcode toolchain.")
+    endif()
+endif()
+
 # OpenMP
 message(STATUS "Checking for OpenMP support")
 find_package(OpenMP)
@@ -17,6 +33,10 @@ endif (OPENMP_FOUND)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+
+# boost
+find_package(Boost)
+include_directories(${Boost_INCLUDE_DIRS})
 
 set(NSGA2_SOURCE_FILES
   src/nsga2/global.cpp
@@ -35,11 +55,11 @@ set(NSGA2_HEADER_FILES
 
 include_directories(src)
 
-add_library(nsga2 SHARED
-  ${NSGA2_SOURCE_FILES})
+add_library(nsga2 SHARED ${NSGA2_SOURCE_FILES})
+target_link_libraries(nsga2 PRIVATE OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
-add_library(nsga2-static STATIC
-  ${NSGA2_SOURCE_FILES})
+add_library(nsga2-static STATIC ${NSGA2_SOURCE_FILES})
+target_link_libraries(nsga2-static PRIVATE OpenMP::OpenMP_CXX ${Boost_LIBRARIES})
 
 # add_executable(test1
 #   src/nsga2/tests/test1.cpp)
